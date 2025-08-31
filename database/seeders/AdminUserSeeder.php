@@ -2,8 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Factories\UserFactory;
+use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class AdminUserSeeder extends Seeder
 {
@@ -13,29 +14,41 @@ class AdminUserSeeder extends Seeder
     public function run(): void
     {
         // Create default admin user
-        UserFactory::createAdmin([
+        User::create([
             'name' => 'System Administrator',
             'email' => 'admin@eventhub.com',
-            'password' => 'admin123456',
+            'password' => Hash::make('admin123456'),
+            'role' => 'admin',
+            'auth_method' => 'laravel', // Admin uses Laravel authentication
             'phone' => '+60123456789',
             'address' => 'TARUMT Main Campus, Kuala Lumpur',
+            'is_active' => true,
+            'email_verified_at' => now(),
         ]);
 
         // Create sample users for testing
-        UserFactory::createVendor([
+        User::create([
             'name' => 'John Vendor',
             'email' => 'vendor@example.com',
-            'password' => 'vendor123456',
+            'password' => Hash::make('vendor123456'),
+            'role' => 'vendor',
+            'auth_method' => 'laravel', // Test vendor uses Laravel authentication
             'phone' => '+60123456788',
             'address' => '123 Vendor Street, KL',
+            'is_active' => true,
+            'email_verified_at' => now(),
         ]);
 
-        UserFactory::createCustomer([
+        User::create([
             'name' => 'Jane Customer',
             'email' => 'customer@example.com',
-            'password' => 'customer123456',
+            'password' => Hash::make('customer123456'),
+            'role' => 'customer',
+            'auth_method' => 'laravel', // Test customer uses Laravel authentication
             'phone' => '+60123456787',
             'address' => '456 Customer Avenue, KL',
+            'is_active' => true,
+            'email_verified_at' => now(),
         ]);
 
         $this->command->info('Admin and sample users created successfully!');

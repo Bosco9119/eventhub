@@ -8,45 +8,7 @@ use Illuminate\Support\Facades\Hash;
 class UserFactory
 {
     /**
-     * Create a new user based on role
-     */
-    public static function createUser(array $data, string $role = 'customer'): User
-    {
-        $userData = array_merge($data, [
-            'role' => $role,
-            'password' => Hash::make($data['password']),
-            'is_active' => true,
-        ]);
-
-        return User::create($userData);
-    }
-
-    /**
-     * Create an admin user
-     */
-    public static function createAdmin(array $data): User
-    {
-        return self::createUser($data, 'admin');
-    }
-
-    /**
-     * Create a vendor user
-     */
-    public static function createVendor(array $data): User
-    {
-        return self::createUser($data, 'vendor');
-    }
-
-    /**
-     * Create a customer user
-     */
-    public static function createCustomer(array $data): User
-    {
-        return self::createUser($data, 'customer');
-    }
-
-    /**
-     * Create a user with validation
+     * Create a user with validation (used by Admin UserController)
      */
     public static function createUserWithValidation(array $data, string $role = 'customer'): User
     {
@@ -74,6 +36,15 @@ class UserFactory
             throw new \InvalidArgumentException("Email already exists");
         }
 
-        return self::createUser($data, $role);
+        // Create user with validated data
+        $userData = array_merge($data, [
+            'role' => $role,
+            'password' => Hash::make($data['password']),
+            'auth_method' => 'laravel', // Admin users use Laravel auth
+            'is_active' => true,
+            'email_verified_at' => now(),
+        ]);
+
+        return User::create($userData);
     }
 } 

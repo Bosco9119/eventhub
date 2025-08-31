@@ -15,7 +15,9 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
-            $table->string('password');
+            $table->string('password')->nullable(); // Nullable for Firebase users
+            $table->string('firebase_uid')->nullable()->unique(); // For Firebase authentication
+            $table->string('auth_method')->default('laravel'); // 'laravel', 'firebase_email', 'oauth'
             $table->enum('role', ['admin', 'vendor', 'customer'])->default('customer');
             $table->string('phone')->nullable();
             $table->text('address')->nullable();
@@ -24,7 +26,6 @@ return new class extends Migration
             $table->rememberToken();
             $table->timestamps();
         });
-        
     }
 
     /**

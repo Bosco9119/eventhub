@@ -30,12 +30,12 @@
                         
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="email" class="form-label">Email Address</label>
-                                <input type="email" class="form-control @error('email') is-invalid @enderror" 
-                                       id="email" name="email" value="{{ old('email', $user->email) }}" required>
-                                @error('email')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                <label class="form-label">Email Address</label>
+                                <input type="email" class="form-control" value="{{ $user->email }}" readonly>
+                                <div class="form-text text-warning">
+                                    <i class="fas fa-shield-alt me-1"></i>
+                                    Sorry! Email cannot be changed !!!
+                                </div>
                             </div>
                         </div>
                     </div>

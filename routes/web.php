@@ -1,30 +1,37 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AuthController;
+use App\Http\Controllers\FirebaseAuthController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\AuthController as AdminAuthController;
+use Illuminate\Support\Facades\Auth;
 
 // Public routes
 Route::get('/', function () {
     return view('welcome');
 })->name('home');
 
-// Authentication routes
-Route::middleware('guest')->group(function () {
-    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'login']);
+// Firebase Authentication routes
+Route::prefix('auth')->name('auth.')->group(function () {
+    Route::get('/firebase', function () {
+        return view('auth.firebase-auth');
+    })->middleware('guest')->name('firebase');
+    Route::post('/firebase/callback', [FirebaseAuthController::class, 'callback'])->name('firebase.callback');
+    Route::post('/logout', [FirebaseAuthController::class, 'logout'])->name('logout');
+    Route::get('/user', [FirebaseAuthController::class, 'user'])->name('user');
     
-    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-    Route::post('/register', [AuthController::class, 'register']);
-    
-    Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])->name('password.request');
-    Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->name('password.email');
+    // Check if user exists by email (no auth required)
+    Route::post('/check-user', [FirebaseAuthController::class, 'checkUserExists'])->name('check-user');
 });
 
-// Logout route
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
+// Admin Authentication routes (public)
+Route::prefix('admin')->name('admin.')->group(function () {
+    Route::get('/login', [AdminAuthController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [AdminAuthController::class, 'login'])->name('login');
+    Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
+});
 
 // Protected routes
 Route::middleware('auth')->group(function () {
@@ -36,13 +43,18 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [ProfileController::class, 'show'])->name('show');
         Route::get('/edit', [ProfileController::class, 'edit'])->name('edit');
         Route::put('/update', [ProfileController::class, 'update'])->name('update');
-        Route::get('/change-password', [ProfileController::class, 'showChangePassword'])->name('change-password');
-        Route::put('/change-password', [ProfileController::class, 'changePassword'])->name('change-password.update');
     });
     
     // Admin routes
-    Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
-        Route::get('/dashboard', [DashboardController::class, 'adminDashboard'])->name('dashboard');
+    Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+        Route::get('/dashboard', function () {
+            $user = Auth::user();
+            $totalUsers = \App\Models\User::count();
+            $totalCustomers = \App\Models\User::where('role', 'customer')->count();
+            $totalVendors = \App\Models\User::where('role', 'vendor')->count();
+            $recentUsers = \App\Models\User::latest()->take(5)->get();
+            return view('dashboard.admin', compact('user', 'totalUsers', 'totalCustomers', 'totalVendors', 'recentUsers'));
+        })->name('dashboard');
         
         // User management
         Route::resource('users', UserController::class);
@@ -52,11 +64,17 @@ Route::middleware('auth')->group(function () {
     
     // Vendor routes
     Route::middleware('role:vendor')->prefix('vendor')->name('vendor.')->group(function () {
-        Route::get('/dashboard', [DashboardController::class, 'vendorDashboard'])->name('dashboard');
+        Route::get('/dashboard', function () {
+            $user = Auth::user();
+            return view('dashboard.vendor', compact('user'));
+        })->name('dashboard');
     });
     
     // Customer routes
     Route::middleware('role:customer')->prefix('customer')->name('customer.')->group(function () {
-        Route::get('/dashboard', [DashboardController::class, 'customerDashboard'])->name('dashboard');
+        Route::get('/dashboard', function () {
+            $user = Auth::user();
+            return view('dashboard.customer', compact('user'));
+        })->name('dashboard');
     });
 });

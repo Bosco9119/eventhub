@@ -16,22 +16,19 @@ class CheckRole
      */
     public function handle(Request $request, Closure $next, string $role): Response
     {
+        // Check if user is authenticated
         if (!Auth::check()) {
-            return redirect()->route('login');
-        }
-
-        $user = Auth::user();
-
-        // Check if user is active
-        if (!$user->is_active) {
-            Auth::logout();
-            return redirect()->route('login')
-                ->with('error', 'Your account has been deactivated. Please contact administrator.');
+            return redirect()->route('auth.firebase');
         }
 
         // Check if user has the required role
-        if (!$user->hasRole($role)) {
-            abort(403, 'Unauthorized access.');
+        if (!Auth::user()->hasRole($role)) {
+            return redirect()->route('auth.firebase');
+        }
+
+        // Check if user is active
+        if (!Auth::user()->is_active) {
+            return redirect()->route('auth.firebase');
         }
 
         return $next($request);

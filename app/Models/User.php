@@ -21,6 +21,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'firebase_uid',
+        'auth_method',
         'role',
         'phone',
         'address',
@@ -47,7 +49,6 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
             'is_active' => 'boolean',
         ];
     }
@@ -84,11 +85,37 @@ class User extends Authenticatable
         return $this->role === $role;
     }
 
+
+
     /**
-     * Check if user has any of the specified roles
+     * Check if user uses Firebase email/password authentication
      */
-    public function hasAnyRole(array $roles): bool
+    public function usesFirebaseEmail(): bool
     {
-        return in_array($this->role, $roles);
+        return $this->auth_method === 'firebase_email';
+    }
+
+    /**
+     * Check if user uses OAuth (Google, etc.)
+     */
+    public function usesOAuth(): bool
+    {
+        return $this->auth_method === 'oauth';
+    }
+
+    /**
+     * Check if user uses Laravel authentication
+     */
+    public function usesLaravelAuth(): bool
+    {
+        return $this->auth_method === 'laravel';
+    }
+
+    /**
+     * Check if user can change password (only Firebase email users)
+     */
+    public function canChangePassword(): bool
+    {
+        return $this->usesFirebaseEmail();
     }
 }
