@@ -35,7 +35,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|in:admin,vendor,customer',
+            'role' => 'required|in:admin', // Only allow admin role
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:500',
         ]);
@@ -48,10 +48,12 @@ class UserController extends Controller
 
         try {
             $userData = $request->only(['name', 'email', 'password', 'phone', 'address']);
-            $user = \App\Factories\UserFactory::createUserWithValidation($userData, $request->role);
+            
+            // Use the new factory method for admin users
+            $user = \App\Factories\UserFactory::createAdminUser($userData);
 
             return redirect()->route('admin.users.index')
-                ->with('success', 'User created successfully!');
+                ->with('success', 'Admin user created successfully!');
         } catch (\InvalidArgumentException $e) {
             return redirect()->back()
                 ->withErrors(['general' => $e->getMessage()])
@@ -123,17 +125,30 @@ class UserController extends Controller
      */
     public function toggleStatus(User $user)
     {
-        // Prevent admin from deactivating themselves
-        if ($user->id === auth()->id()) {
+        try {
+            // Prevent admin from deactivating themselves
+            if ($user->id === auth()->id()) {
+                return redirect()->route('admin.users.index')
+                    ->with('error', 'You cannot deactivate your own account.');
+            }
+
+            $user->update(['is_active' => !$user->is_active]);
+
+            $status = $user->is_active ? 'activated' : 'deactivated';
+            
             return redirect()->route('admin.users.index')
-                ->with('error', 'You cannot deactivate your own account.');
+                ->with('success', "User {$status} successfully!");
+                
+        } catch (\Exception $e) {
+            \Log::error('Toggle status error: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'admin_id' => auth()->id(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->route('admin.users.index')
+                ->with('error', 'Failed to update user status. Please try again.');
         }
-
-        $user->update(['is_active' => !$user->is_active]);
-
-        $status = $user->is_active ? 'activated' : 'deactivated';
-        return redirect()->route('admin.users.index')
-            ->with('success', "User {$status} successfully!");
     }
 
     /**
@@ -141,24 +156,30 @@ class UserController extends Controller
      */
     public function search(Request $request)
     {
-        $query = $request->get('query');
-        $role = $request->get('role');
+        try {
+            $query = $request->get('query');
+            $role = $request->get('role');
 
-        $users = User::query();
+            $users = User::query();
 
-        if ($query) {
-            $users->where(function ($q) use ($query) {
-                $q->where('name', 'like', "%{$query}%")
-                  ->orWhere('email', 'like', "%{$query}%");
-            });
+            if ($query) {
+                $users->where(function ($q) use ($query) {
+                    $q->where('name', 'like', "%{$query}%")
+                      ->orWhere('email', 'like', "%{$query}%");
+                });
+            }
+
+            if ($role) {
+                $users->where('role', $role);
+            }
+
+            $users = $users->orderBy('created_at', 'desc')->paginate(15);
+
+            return view('admin.users.index', compact('users', 'query', 'role'));
+        } catch (\Exception $e) {
+            \Log::error('User search error: ' . $e->getMessage());
+            return redirect()->route('admin.users.index')
+                ->with('error', 'Search failed. Please try again.');
         }
-
-        if ($role) {
-            $users->where('role', $role);
-        }
-
-        $users = $users->orderBy('created_at', 'desc')->paginate(15);
-
-        return view('admin.users.index', compact('users', 'query', 'role'));
     }
 } 

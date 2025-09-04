@@ -118,4 +118,45 @@ class User extends Authenticatable
     {
         return $this->usesFirebaseEmail();
     }
+
+    /**
+     * Check if user is Firebase-managed (not Laravel auth)
+     */
+    public function isFirebaseManaged(): bool
+    {
+        return $this->auth_method !== 'laravel';
+    }
+
+    /**
+     * Find user by Firebase UID
+     */
+    public static function findByFirebaseUid(string $uid): ?User
+    {
+        return static::where('firebase_uid', $uid)->first();
+    }
+
+    /**
+     * Scope for Firebase-managed users
+     */
+    public function scopeFirebaseManaged($query)
+    {
+        return $query->where('auth_method', '!=', 'laravel');
+    }
+
+    /**
+     * Scope for Laravel-managed users (admin only)
+     */
+    public function scopeLaravelManaged($query)
+    {
+        return $query->where('auth_method', 'laravel');
+    }
+
+    /**
+     * Get the primary identifier for the user
+     * Firebase users use firebase_uid, Laravel users use id
+     */
+    public function getPrimaryIdentifier(): string
+    {
+        return $this->isFirebaseManaged() ? $this->firebase_uid : (string) $this->id;
+    }
 }

@@ -46,10 +46,21 @@ class ProfileController extends Controller
                 ->withInput();
         }
 
-        // Only update safe fields (exclude email to maintain Firebase sync)
-        $user->update($request->only(['name', 'phone', 'address']));
+        // Use factory for profile updates to ensure proper validation
+        try {
+            if ($user->isFirebaseManaged()) {
+                \App\Factories\UserFactory::updateFirebaseUser($user, $request->only(['name', 'phone', 'address']));
+            } else {
+                // For admin users, direct update is fine
+                $user->update($request->only(['name', 'phone', 'address']));
+            }
 
-        return redirect()->route('profile.show')
-            ->with('success', 'Profile updated successfully! Note: Email cannot be changed to maintain authentication security.');
+            return redirect()->route('profile.show')
+                ->with('success', 'Profile updated successfully! Note: Email cannot be changed to maintain authentication security.');
+        } catch (\InvalidArgumentException $e) {
+            return redirect()->back()
+                ->withErrors(['general' => $e->getMessage()])
+                ->withInput();
+        }
     }
 } 

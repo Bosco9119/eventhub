@@ -33,6 +33,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
 });
 
+// Test search route (temporary)
+Route::get('/test-search-route', function() {
+    return response()->json(['message' => 'Test search route works!']);
+});
+
 // Protected routes
 Route::middleware('auth')->group(function () {
     // Main dashboard
@@ -56,10 +61,21 @@ Route::middleware('auth')->group(function () {
             return view('dashboard.admin', compact('user', 'totalUsers', 'totalCustomers', 'totalVendors', 'recentUsers'));
         })->name('dashboard');
         
-        // User management
+        // User management - specific routes first to avoid conflicts
+        Route::get('/users-search', [UserController::class, 'search'])->name('users.search');
+        Route::post('/toggle-user-status/{user}', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
         Route::resource('users', UserController::class);
-        Route::get('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
-        Route::get('/users/search', [UserController::class, 'search'])->name('users.search');
+        
+        // Debug route for testing
+        Route::get('/debug/users', function() {
+            $users = \App\Models\User::paginate(5);
+            return response()->json($users);
+        })->name('debug.users');
+        
+        // Test search route
+        Route::get('/test-search', function() {
+            return 'Search route is working!';
+        })->name('test.search');
     });
     
     // Vendor routes

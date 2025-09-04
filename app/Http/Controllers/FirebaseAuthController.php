@@ -33,39 +33,50 @@ class FirebaseAuthController extends Controller
                 'auth_type' => $authType
             ]);
             
-            // Find existing user by email first (this prevents duplicate email errors)
-            $user = User::where('email', $email)->first();
+            // Find existing user by Firebase UID first (primary lookup)
+            $user = User::findByFirebaseUid($uid);
             
             if ($user) {
-                Log::info('Found existing user', ['user_id' => $user->id, 'current_role' => $user->role]);
+                Log::info('Found existing Firebase user', ['user_id' => $user->id, 'firebase_uid' => $uid, 'current_role' => $user->role]);
                 
-                // Update existing user with Firebase UID and name, but NEVER role
+                // Update existing user profile data, but NEVER role or auth_method
                 $user->update([
-                    'firebase_uid' => $uid,
                     'name' => $name,
-                    'auth_method' => $authType, // Set based on authentication type
-                    // Role is NEVER updated for existing users
+                    'email' => $email, // Update email if changed in Firebase
                 ]);
-                Log::info('Updated existing user', ['user_id' => $user->id, 'kept_role' => $user->role, 'auth_method' => $authType]);
+                Log::info('Updated existing Firebase user profile', ['user_id' => $user->id, 'kept_role' => $user->role, 'kept_auth_method' => $user->auth_method]);
             } else {
-                Log::info('Creating new user', ['email' => $email, 'role' => $role, 'auth_type' => $authType]);
+                // Check if user exists by email (migration case)
+                $user = User::where('email', $email)->first();
                 
-                // Create new user if none exists
-                if (!$role) {
-                    Log::error('No role provided for new user');
-                    return response()->json(['error' => 'Role is required for new users'], 400);
+                if ($user) {
+                    Log::info('Found existing user by email, linking Firebase UID', ['user_id' => $user->id, 'email' => $email]);
+                    
+                    // Link existing user with Firebase UID
+                    $user->update([
+                        'firebase_uid' => $uid,
+                        'name' => $name,
+                        'auth_method' => $authType,
+                    ]);
+                    Log::info('Linked existing user with Firebase', ['user_id' => $user->id, 'firebase_uid' => $uid]);
+                } else {
+                    Log::info('Creating new Firebase user', ['email' => $email, 'role' => $role, 'auth_type' => $authType]);
+                    
+                    // Create new user using factory
+                    if (!$role) {
+                        Log::error('No role provided for new user');
+                        return response()->json(['error' => 'Role is required for new users'], 400);
+                    }
+                    
+                    $user = \App\Factories\UserFactory::createFirebaseUser([
+                        'uid' => $uid,
+                        'name' => $name,
+                        'email' => $email,
+                        'role' => $role,
+                        'auth_type' => $authType,
+                    ]);
+                    Log::info('Created new Firebase user via factory', ['user_id' => $user->id, 'firebase_uid' => $uid, 'role' => $role, 'auth_method' => $authType]);
                 }
-                
-                $user = User::create([
-                    'firebase_uid' => $uid,
-                    'name' => $name,
-                    'email' => $email,
-                    'role' => $role, // Only set role for new users
-                    'auth_method' => $authType, // Set based on authentication type
-                    'email_verified_at' => now(),
-                    'is_active' => true,
-                ]);
-                Log::info('Created new user', ['user_id' => $user->id, 'role' => $role, 'auth_method' => $authType]);
             }
 
             // Log in the user

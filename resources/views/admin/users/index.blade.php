@@ -6,12 +6,21 @@
 <div class="row">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2>
-                <i class="fas fa-users me-2"></i>User Management
-            </h2>
+            <div>
+                <h2>
+                    <i class="fas fa-users me-2"></i>User Management
+                </h2>
+                <p class="text-muted mb-0">Manage all users in the system</p>
+            </div>
             <a href="{{ route('admin.users.create') }}" class="btn btn-primary">
-                <i class="fas fa-user-plus me-2"></i>Add New User
+                <i class="fas fa-user-plus me-2"></i>Add Admin User
             </a>
+        </div>
+        
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Note:</strong> This page shows all users. Regular users (vendors/customers) register through the main authentication system and use Firebase authentication. 
+            Only admin users are created through this panel.
         </div>
     </div>
 </div>
@@ -107,11 +116,13 @@
                                                 <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-sm btn-outline-primary">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
-                                                <a href="{{ route('admin.users.toggle-status', $user) }}" 
-                                                   class="btn btn-sm btn-outline-{{ $user->is_active ? 'warning' : 'success' }}"
-                                                   onclick="return confirm('Are you sure you want to {{ $user->is_active ? 'deactivate' : 'activate' }} this user?')">
-                                                    <i class="fas fa-{{ $user->is_active ? 'ban' : 'check' }}"></i>
-                                                </a>
+                                                <form action="{{ route('admin.users.toggle-status', $user) }}" method="POST" class="d-inline">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-sm btn-outline-{{ $user->is_active ? 'warning' : 'success' }}"
+                                                            onclick="return confirm('Are you sure you want to {{ $user->is_active ? 'deactivate' : 'activate' }} this user?')">
+                                                        <i class="fas fa-{{ $user->is_active ? 'ban' : 'check' }}"></i>
+                                                    </button>
+                                                </form>
                                                 @if($user->id !== auth()->id())
                                                     <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="d-inline">
                                                         @csrf
