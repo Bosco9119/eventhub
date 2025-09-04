@@ -12,7 +12,7 @@ use Illuminate\Validation\ValidationException;
 class AuthController extends Controller
 {
     /**
-     * Show admin login form
+     * Show admin login form 
      */
     public function showLoginForm()
     {
@@ -25,7 +25,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Handle admin login
+     * Handle admin login authentication through Laravel and local mysql database
      */
     public function login(Request $request)
     {

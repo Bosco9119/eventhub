@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Hash;
 class UserFactory
 {
     /**
-     * Create a Firebase user (primary method for non-admin users)
+     * Create a Firebase authenticated user , only for all non-admin users
      */
     public static function createFirebaseUser(array $data): User
     {
@@ -25,13 +25,13 @@ class UserFactory
             throw new \InvalidArgumentException("Invalid email format");
         }
 
-        // Validate role
+        // Validate role either vendor or customer
         $validRoles = ['vendor', 'customer']; // Admin users are created via Laravel
         if (!in_array($data['role'], $validRoles)) {
             throw new \InvalidArgumentException("Invalid role for Firebase user. Must be one of: " . implode(', ', $validRoles));
         }
 
-        // Validate auth type
+        // Validate auth type either firebase_email or oauth
         $validAuthTypes = ['firebase_email', 'oauth'];
         if (!in_array($data['auth_type'], $validAuthTypes)) {
             throw new \InvalidArgumentException("Invalid auth type. Must be one of: " . implode(', ', $validAuthTypes));
@@ -42,12 +42,12 @@ class UserFactory
             throw new \InvalidArgumentException("Firebase UID already exists");
         }
 
-        // Check if email already exists
+        // Check if email already exists in database
         if (User::where('email', $data['email'])->exists()) {
             throw new \InvalidArgumentException("Email already exists");
         }
 
-        // Create Firebase user
+        // Create Firebase user with all the given data
         return User::create([
             'firebase_uid' => $data['uid'],
             'name' => $data['name'],
@@ -62,8 +62,8 @@ class UserFactory
     }
 
     /**
-     * Create an admin user (Laravel authentication only)
-     * This method is ONLY for creating admin users through the admin panel
+     * Create an admin user (through Laravel authentication only)
+     * This method is ONLY for creating admin users through the admin panel by root admin
      */
     public static function createAdminUser(array $data): User
     {
@@ -75,12 +75,12 @@ class UserFactory
             }
         }
 
-        // Validate email format
+        // Validate email format similar with above
         if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
             throw new \InvalidArgumentException("Invalid email format");
         }
 
-        // Check if email already exists
+        // Check if email already exists in database similar with above
         if (User::where('email', $data['email'])->exists()) {
             throw new \InvalidArgumentException("Email already exists");
         }
