@@ -230,19 +230,21 @@
     </div>
     
     <div class="col-lg-3 col-md-6">
-        <div class="card stats-card bg-success text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="stats-number">0</div>
-                        <div class="stats-label">Events</div>
-                    </div>
-                    <div class="stats-icon">
-                        <i class="fas fa-calendar fa-2x"></i>
+        <a href="{{ route('events.index') }}" class="text-decoration-none">
+            <div class="card stats-card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="stats-number">0</div>
+                            <div class="stats-label">Events</div>
+                        </div>
+                        <div class="stats-icon">
+                            <i class="fas fa-calendar fa-2x"></i>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
 </div>
 
@@ -269,7 +271,7 @@
                         </a>
                     </div>
                     <div class="col-lg-3 col-md-6">
-                        <a href="#" class="action-btn btn-success">
+                        <a href="{{ route('events.create') }}" class="action-btn btn-success">
                             <i class="fas fa-calendar-plus me-2"></i>Create Event
                         </a>
                     </div>

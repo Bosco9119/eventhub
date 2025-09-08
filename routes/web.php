@@ -6,6 +6,8 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
+use App\Http\Controllers\EventController;
+use App\Http\Controllers\ActivityController;
 use Illuminate\Support\Facades\Auth;
 
 // Public routes
@@ -94,3 +96,7 @@ Route::middleware('auth')->group(function () {
         })->name('dashboard');
     });
 });
+
+Route::post('/activities', [ActivityController::class, 'store'])->name('activities.store');
+Route::get('/activities/create', [ActivityController::class, 'create'])->name('activities.create');
+Route::resource('events', EventController::class);
